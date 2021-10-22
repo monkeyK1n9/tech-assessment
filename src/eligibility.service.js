@@ -1,4 +1,8 @@
 class EligibilityService {
+  _checkField(actualValue, expectedValue) {
+    return actualValue == expectedValue;
+  }
+
   /**
    * Compare cart data with criteria to compute eligibility.
    * If all criteria are fulfilled then the cart is eligible (return true).
@@ -8,8 +12,17 @@ class EligibilityService {
    * @return {boolean}
    */
   isEligible(cart, criteria) {
-    // TODO: compute cart eligibility here.
-    return false;
+    for (const field in criteria) {
+      if (cart[field] === undefined) {
+        return false;
+      }
+
+      if (!this._checkField(cart[field], criteria[field])) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
