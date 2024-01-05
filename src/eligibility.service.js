@@ -24,9 +24,13 @@ class EligibilityService {
         const unflattenObject = this.unflattenObject(obj);
 
         continue;
-      } 
-
-
+      }
+      else {
+        isConditionValid = this.checkCondition(cart, Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
+        console.log(cart, Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
+        console.log("Check without . : " + isConditionValid);
+        return isConditionValid;
+      }
 
     }
 
@@ -85,39 +89,58 @@ class EligibilityService {
       typeof criteriaValue !== "undefined"
     ) {
       // this means criteriaValue is a number, string, boolean or bigint
-      return cart?.criteriaKey == criteriaValue
+      if(
+        criteriaKey !== "and" ||
+        criteriaKey !== "or" ||
+        criteriaKey !== "in" ||
+        criteriaKey !== "gt" ||
+        criteriaKey !== "gte" ||
+        criteriaKey !== "lt" ||
+        criteriaKey !== "lte"
+      ) {
+
+        return cart?.criteriaKey == criteriaValue
+      }
     }
 
     // 2- gt, lt, gte, lte condition matches respectively when cart value is greater, lower, greater or equal, lower or equal;
     // we recursively check for down conditions
-    let tempCheck = false;
+    let tempChecks = [];
     for(let i = 0; i < Object.entries(criteriaValue).length; i++) {
       if(typeof Object.entries(criteriaValue)[i][1] !== "object") {
         switch (Object.entries(criteriaValue)[i][0]) {
           case "gt":
-            tempCheck = Object.entries(criteriaValue)[i][1] > cart?.criteriaKey;
+            tempChecks.push(Object.entries(criteriaValue)[i][1] > cart?.criteriaKey);
             break;
           case "lt":
-            tempCheck = Object.entries(criteriaValue)[i][1] < cart?.criteriaKey;
+            tempChecks.push(Object.entries(criteriaValue)[i][1] < cart?.criteriaKey);
             break;
           case "gte":
-            tempCheck = Object.entries(criteriaValue)[i][1] >= cart?.criteriaKey;
+            tempChecks.push(Object.entries(criteriaValue)[i][1] >= cart?.criteriaKey);
             break;
           case "lte":
-            tempCheck = Object.entries(criteriaValue)[i][1] <= cart?.criteriaKey;
+            tempChecks.push(Object.entries(criteriaValue)[i][1] <= cart?.criteriaKey);
             break;
           default:
-            tempCheck = false;
+            tempChecks.push(false);
             break;
         }
+
+        if(criteriaKey == 'and') return tempChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true);
+        if(criteriaKey == 'or') return tempChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false);
+        
       }
       else {
         if (!Array.isArray(Object.entries(criteriaValue)[i][1])) {
           switch (Object.entries(criteriaValue)[i][0]) {
             case "and":
-              tempCheck = this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]);
+              tempChecks.push(this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]));
               break;
             case "or":
+              tempChecks.push(this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]));
+              break;
+            case "in":
+              tempChecks.push(Object.entries(criteriaValue)[i][1].includes(cart?.Object.entries(criteriaValue)[i][0]));
               break;
             default:
               break;
