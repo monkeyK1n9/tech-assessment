@@ -88,7 +88,43 @@ class EligibilityService {
       return cart?.criteriaKey == criteriaValue
     }
 
-
+    // 2- gt, lt, gte, lte condition matches respectively when cart value is greater, lower, greater or equal, lower or equal;
+    // we recursively check for down conditions
+    let tempCheck = false;
+    for(let i = 0; i < Object.entries(criteriaValue).length; i++) {
+      if(typeof Object.entries(criteriaValue)[i][1] !== "object") {
+        switch (Object.entries(criteriaValue)[i][0]) {
+          case "gt":
+            tempCheck = Object.entries(criteriaValue)[i][1] > cart?.criteriaKey;
+            break;
+          case "lt":
+            tempCheck = Object.entries(criteriaValue)[i][1] < cart?.criteriaKey;
+            break;
+          case "gte":
+            tempCheck = Object.entries(criteriaValue)[i][1] >= cart?.criteriaKey;
+            break;
+          case "lte":
+            tempCheck = Object.entries(criteriaValue)[i][1] <= cart?.criteriaKey;
+            break;
+          default:
+            tempCheck = false;
+            break;
+        }
+      }
+      else {
+        if (!Array.isArray(Object.entries(criteriaValue)[i][1])) {
+          switch (Object.entries(criteriaValue)[i][0]) {
+            case "and":
+              tempCheck = this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]);
+              break;
+            case "or":
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
 
     return false;
   }
