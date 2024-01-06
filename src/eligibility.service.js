@@ -11,8 +11,26 @@ class EligibilityService {
     // discard invalid criteria
     if(typeof criteria !== "object" || Array.isArray(criteria)) return false;
 
-    
-    return false;
+    // iterate over criteria object and check for conditions with cart
+    let isConditionValid = [];
+    for(let i = 0; i < Object.entries(criteria).length; i++) {
+      const obj = {
+        [Object.entries(criteria)[i][0]] : Object.entries(criteria)[i][1]
+      };
+      // if obj key contains ".", we do the check down the chain
+      if(Object.entries(criteria)[i][0].includes(".")) {
+        const unflattenObject = this.unflattenObject(obj);
+
+        continue;
+      } 
+      else {
+        isConditionValid.push(this.checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
+        console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
+        console.log("Check without . : " + isConditionValid);
+      }
+    }
+    const result = isConditionValid.reduce((accumulator, currentValue) => accumulator && currentValue, true);
+    return result;
   }
 
   // flattenObject(obj) {
@@ -39,23 +57,23 @@ class EligibilityService {
   //   return result;
   // }
 
-  // unflattenObject(obj, delimiter = ".") {
-  //   const result = Object.keys(obj).reduce((res, k) => {
-  //     k.split(delimiter).reduce(
-  //       (acc, e, i, keys) =>
-  //         acc[e] ||
-  //         (acc[e] = isNaN(Number(keys[i + 1]))
-  //           ? keys.length - 1 === i
-  //             ? obj[k]
-  //             : {}
-  //           : []),
-  //       res
-  //     );
-  //     return res;
-  //   }, {});
+  unflattenObject(obj, delimiter = ".") {
+    const result = Object.keys(obj).reduce((res, k) => {
+      k.split(delimiter).reduce(
+        (acc, e, i, keys) =>
+          acc[e] ||
+          (acc[e] = isNaN(Number(keys[i + 1]))
+            ? keys.length - 1 === i
+              ? obj[k]
+              : {}
+            : []),
+        res
+      );
+      return res;
+    }, {});
 
-  //   return result;
-  // }
+    return result;
+  }
 
   checkCondition(cartProperty, criteriaValue) {
     // 1- Basic condition (eg: total: 20) matches when total == 20;
@@ -67,7 +85,7 @@ class EligibilityService {
     ) {
       // this means criteriaValue is a number, string, boolean or bigint
 
-      return cart[criteriaKey] == criteriaValue
+      return cartProperty == criteriaValue
       
     }
 
@@ -81,7 +99,7 @@ class EligibilityService {
       }
       else if(criteriaArr[i][0] == 'and') {
         let andChecks = [];
-        const andCheckArr = Object.entries[criteriaArr[i][1]];
+        const andCheckArr = Object.entries(criteriaArr[i][1]);
 
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < andCheckArr.length; j++) {
@@ -98,7 +116,7 @@ class EligibilityService {
       }
       else if(criteriaArr[i][0] == 'or') {
         let orChecks = [];
-        const orCheckArr = Object.entries[criteriaArr[i][1]];
+        const orCheckArr = Object.entries(criteriaArr[i][1]);
 
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < orCheckArr.length; j++) {
@@ -112,6 +130,20 @@ class EligibilityService {
 
         //push the and-result to the tempChecks
         tempChecks.push(orChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false));
+      }
+
+      // 3- gt, gte, lt, lte checks
+      else if(criteriaArr[i][0] == 'gt') {
+        tempChecks.push(this.validateInequality("gt", cartProperty, orCheckArr[i][1]))
+      }
+      else if(criteriaArr[i][0] == 'gte') {
+        tempChecks.push(this.validateInequality("gte", cartProperty, orCheckArr[i][1]))
+      }
+      else if(criteriaArr[i][0] == 'lt') {
+        tempChecks.push(this.validateInequality("lt", cartProperty, orCheckArr[i][1]))
+      }
+      else if(criteriaArr[i][0] == 'lte') {
+        tempChecks.push(this.validateInequality("lte", cartProperty, orCheckArr[i][1]))
       }
     }
 
