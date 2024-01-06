@@ -11,30 +11,7 @@ class EligibilityService {
     // discard invalid criteria
     if(typeof criteria !== "object" || Array.isArray(criteria)) return false;
 
-    // iterate over criteria object and check for conditions with cart
-    let isConditionValid = false;
-    for(let i = 0; i < Object.entries(criteria).length; i++) {
-      const obj = {
-        [Object.entries(criteria)[i][0]] : Object.entries(criteria)[i][1]
-      };
-
-      // if obj key contains ".", we do the check down the chain
-      if(Object.entries(criteria)[i][0].includes(".")) {
-
-        const unflattenObject = this.unflattenObject(obj);
-
-        continue;
-      }
-      else {
-        isConditionValid = this.checkCondition(cart, Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-        console.log(cart, Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-        console.log("Check without . : " + isConditionValid);
-        return isConditionValid;
-      }
-
-    }
-
-    console.log(this.unflattenObject(criteria));
+    
     return false;
   }
 
@@ -62,25 +39,25 @@ class EligibilityService {
   //   return result;
   // }
 
-  unflattenObject(obj, delimiter = ".") {
-    const result = Object.keys(obj).reduce((res, k) => {
-      k.split(delimiter).reduce(
-        (acc, e, i, keys) =>
-          acc[e] ||
-          (acc[e] = isNaN(Number(keys[i + 1]))
-            ? keys.length - 1 === i
-              ? obj[k]
-              : {}
-            : []),
-        res
-      );
-      return res;
-    }, {});
+  // unflattenObject(obj, delimiter = ".") {
+  //   const result = Object.keys(obj).reduce((res, k) => {
+  //     k.split(delimiter).reduce(
+  //       (acc, e, i, keys) =>
+  //         acc[e] ||
+  //         (acc[e] = isNaN(Number(keys[i + 1]))
+  //           ? keys.length - 1 === i
+  //             ? obj[k]
+  //             : {}
+  //           : []),
+  //       res
+  //     );
+  //     return res;
+  //   }, {});
 
-    return result;
-  }
+  //   return result;
+  // }
 
-  checkCondition(cart, criteriaKey, criteriaValue) {
+  checkCondition(cartProperty, criteriaValue) {
     // 1- Basic condition (eg: total: 20) matches when total == 20;
     if(
       typeof criteriaValue !== "object" && 
@@ -89,67 +66,72 @@ class EligibilityService {
       typeof criteriaValue !== "undefined"
     ) {
       // this means criteriaValue is a number, string, boolean or bigint
-      if(
-        criteriaKey !== "and" ||
-        criteriaKey !== "or" ||
-        criteriaKey !== "in" ||
-        criteriaKey !== "gt" ||
-        criteriaKey !== "gte" ||
-        criteriaKey !== "lt" ||
-        criteriaKey !== "lte"
-      ) {
 
-        return cart?.criteriaKey == criteriaValue
-      }
+      return cart[criteriaKey] == criteriaValue
+      
     }
 
-    // 2- gt, lt, gte, lte condition matches respectively when cart value is greater, lower, greater or equal, lower or equal;
-    // we recursively check for down conditions
+    // 2- and, or and in checks
+    const criteriaArr = Object.entries(criteriaValue);
     let tempChecks = [];
-    for(let i = 0; i < Object.entries(criteriaValue).length; i++) {
-      if(typeof Object.entries(criteriaValue)[i][1] !== "object") {
-        switch (Object.entries(criteriaValue)[i][0]) {
-          case "gt":
-            tempChecks.push(Object.entries(criteriaValue)[i][1] > cart?.criteriaKey);
-            break;
-          case "lt":
-            tempChecks.push(Object.entries(criteriaValue)[i][1] < cart?.criteriaKey);
-            break;
-          case "gte":
-            tempChecks.push(Object.entries(criteriaValue)[i][1] >= cart?.criteriaKey);
-            break;
-          case "lte":
-            tempChecks.push(Object.entries(criteriaValue)[i][1] <= cart?.criteriaKey);
-            break;
-          default:
-            tempChecks.push(false);
-            break;
-        }
 
-        if(criteriaKey == 'and') return tempChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true);
-        if(criteriaKey == 'or') return tempChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false);
-        
+    for(let i = 0; i < criteriaArr.length; i++) {
+      if(criteriaArr[i][0] == 'in') {
+        tempChecks.push(criteriaArr[i][1].includes(cartProperty));
       }
-      else {
-        if (!Array.isArray(Object.entries(criteriaValue)[i][1])) {
-          switch (Object.entries(criteriaValue)[i][0]) {
-            case "and":
-              tempChecks.push(this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]));
-              break;
-            case "or":
-              tempChecks.push(this.checkCondition(cart?.Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][0], Object.entries(criteriaValue)[i][1]));
-              break;
-            case "in":
-              tempChecks.push(Object.entries(criteriaValue)[i][1].includes(cart?.Object.entries(criteriaValue)[i][0]));
-              break;
-            default:
-              break;
+      else if(criteriaArr[i][0] == 'and') {
+        let andChecks = [];
+        const andCheckArr = Object.entries[criteriaArr[i][1]];
+
+        // now validate the gt, gte, lt, lte conditions
+        for(let j = 0; j < andCheckArr.length; j++) {
+          if(andCheckArr[i][0] !== 'in') {
+            andChecks.push(this.validateInequality(andCheckArr[i][0], cartProperty, andCheckArr[i][1]));
+          }
+          else if(andCheckArr[i][0] == 'in') {
+            andChecks.push(andCheckArr[i][1].includes(cartProperty));
           }
         }
+
+        //push the and-result to the tempChecks
+        tempChecks.push(andChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true));
+      }
+      else if(criteriaArr[i][0] == 'or') {
+        let orChecks = [];
+        const orCheckArr = Object.entries[criteriaArr[i][1]];
+
+        // now validate the gt, gte, lt, lte conditions
+        for(let j = 0; j < orCheckArr.length; j++) {
+          if(orCheckArr[i][0] !== 'in') {
+            orChecks.push(this.validateInequality(orCheckArr[i][0], cartProperty, orCheckArr[i][1]));
+          }
+          else if(orCheckArr[i][0] == 'in') {
+            orChecks.push(orCheckArr[i][1].includes(cartProperty));
+          }
+        }
+
+        //push the and-result to the tempChecks
+        tempChecks.push(orChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false));
       }
     }
 
-    return false;
+    // after and, or and in checks, we return the result for this check
+    return tempChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true)
+  }
+
+  validateInequality(type, valueChecked, limit) {
+    switch(type) {
+      case "gt":
+        return valueChecked > limit;
+      case "gte":
+        return valueChecked >= limit;
+      case "lt":
+        return valueChecked < limit;
+      case "lte":
+        return valueChecked <= limit;
+      default:
+        return false;
+    }
   }
 
 }
