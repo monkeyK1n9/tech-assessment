@@ -20,7 +20,13 @@ class EligibilityService {
       // if obj key contains ".", we do the check down the chain
       if(Object.entries(criteria)[i][0].includes(".")) {
         const criteriaKey = Object.entries(criteria)[i][0].split(".");
+
         if(!Array.isArray(cart[criteriaKey[0]])) {
+          if(!cart[criteriaKey[0]]) {
+            isConditionValid.push(false);
+            continue;
+          }
+
           isConditionValid.push(this.checkCondition(cart[criteriaKey[0]][criteriaKey[1]], Object.entries(criteria)[i][1]))
           console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
           console.log("Checks: " + isConditionValid);
@@ -29,16 +35,24 @@ class EligibilityService {
           // we loop over the array to perform the checks
           let arrChecks = [];
           for(let j = 0; j < cart[criteriaKey[0]].length; j++) {
+            if(!cart[criteriaKey[0]][j]) {
+              arrChecks.push(false);
+              continue
+            }
             arrChecks.push(this.checkCondition(cart[criteriaKey[0]][j][criteriaKey[1]], Object.entries(criteria)[i][1]))
           }
 
           // Now we reduce the arrChecks to validate check
-          isConditionValid.push(arrChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true));
+          isConditionValid.push(arrChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false));
           console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
           console.log("Checks: " + isConditionValid);
         }
       } 
       else {
+        if(cart[Object.entries(criteria)[i][0]] == undefined) {
+          isConditionValid.push(false);
+          continue;
+        }
         isConditionValid.push(this.checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
         console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
         console.log("Checks: " + isConditionValid);
@@ -119,10 +133,10 @@ class EligibilityService {
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < andCheckArr.length; j++) {
           if(andCheckArr[i][0] !== 'in') {
-            andChecks.push(this.validateInequality(andCheckArr[i][0], cartProperty, andCheckArr[i][1]));
+            andChecks.push(this.validateInequality(andCheckArr[j][0], cartProperty, andCheckArr[j][1]));
           }
-          else if(andCheckArr[i][0] == 'in') {
-            andChecks.push(andCheckArr[i][1].includes(cartProperty));
+          else if(andCheckArr[j][0] == 'in') {
+            andChecks.push(andCheckArr[j][1].includes(cartProperty));
           }
         }
 
@@ -135,11 +149,11 @@ class EligibilityService {
 
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < orCheckArr.length; j++) {
-          if(orCheckArr[i][0] !== 'in') {
-            orChecks.push(this.validateInequality(orCheckArr[i][0], cartProperty, orCheckArr[i][1]));
+          if(orCheckArr[j][0] !== 'in') {
+            orChecks.push(this.validateInequality(orCheckArr[j][0], cartProperty, orCheckArr[j][1]));
           }
-          else if(orCheckArr[i][0] == 'in') {
-            orChecks.push(orCheckArr[i][1].includes(cartProperty));
+          else if(orCheckArr[j][0] == 'in') {
+            orChecks.push(orCheckArr[j][1].includes(cartProperty));
           }
         }
 
