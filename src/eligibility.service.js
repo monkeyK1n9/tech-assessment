@@ -29,7 +29,6 @@ class EligibilityService {
 
           isConditionValid.push(this.checkCondition(cart[criteriaKey[0]][criteriaKey[1]], Object.entries(criteria)[i][1]))
           console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-          console.log("Checks: " + isConditionValid);
         }
         else {
           // we loop over the array to perform the checks
@@ -45,7 +44,6 @@ class EligibilityService {
           // Now we reduce the arrChecks to validate check
           isConditionValid.push(arrChecks.reduce((accumulator, currentValue) => accumulator || currentValue, false));
           console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-          console.log("Checks: " + isConditionValid);
         }
       } 
       else {
@@ -55,52 +53,10 @@ class EligibilityService {
         }
         isConditionValid.push(this.checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
         console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-        console.log("Checks: " + isConditionValid);
       }
     }
     const result = isConditionValid.reduce((accumulator, currentValue) => accumulator && currentValue, true);
-    return result;
-  }
-
-  // flattenObject(obj) {
-  //   let result = {};
-
-  //   for(const i in obj) {
-  //     // We check the type of the i using
-  //     // typeof() function and recursively
-  //     // call the function again
-  //     if ((typeof obj[i]) === 'object' && !Array.isArray(obj[i])) {
-  //       const temp = this.flattenObject(obj[i]);
-  //       for (const j in temp) {
-
-  //         // Store temp in result
-  //         result[i + '.' + j] = temp[j];
-  //       }
-  //     }
-
-  //     // Else store obj[i] in result directly
-  //     else {
-  //       result[i] = obj[i];
-  //     }
-  //   }
-  //   return result;
-  // }
-
-  unflattenObject(obj, delimiter = ".") {
-    const result = Object.keys(obj).reduce((res, k) => {
-      k.split(delimiter).reduce(
-        (acc, e, i, keys) =>
-          acc[e] ||
-          (acc[e] = isNaN(Number(keys[i + 1]))
-            ? keys.length - 1 === i
-              ? obj[k]
-              : {}
-            : []),
-        res
-      );
-      return res;
-    }, {});
-
+    console.log("Checks: " + isConditionValid);
     return result;
   }
 
@@ -162,17 +118,8 @@ class EligibilityService {
       }
 
       // 3- gt, gte, lt, lte checks
-      else if(criteriaArr[i][0] == 'gt') {
-        tempChecks.push(this.validateInequality("gt", cartProperty, criteriaArr[i][1]))
-      }
-      else if(criteriaArr[i][0] == 'gte') {
-        tempChecks.push(this.validateInequality("gte", cartProperty, criteriaArr[i][1]))
-      }
-      else if(criteriaArr[i][0] == 'lt') {
-        tempChecks.push(this.validateInequality("lt", cartProperty, criteriaArr[i][1]))
-      }
-      else if(criteriaArr[i][0] == 'lte') {
-        tempChecks.push(this.validateInequality("lte", cartProperty, criteriaArr[i][1]))
+      else {
+        tempChecks.push(this.validateInequality(criteriaArr[i][0], cartProperty, criteriaArr[i][1]))
       }
     }
 
@@ -182,16 +129,11 @@ class EligibilityService {
 
   validateInequality(type, valueChecked, limit) {
     switch(type) {
-      case "gt":
-        return valueChecked > limit;
-      case "gte":
-        return valueChecked >= limit;
-      case "lt":
-        return valueChecked < limit;
-      case "lte":
-        return valueChecked <= limit;
-      default:
-        return false;
+      case "gt": return valueChecked > limit;
+      case "gte": return valueChecked >= limit;
+      case "lt": return valueChecked < limit;
+      case "lte": return valueChecked <= limit;
+      default: return false;
     }
   }
 
