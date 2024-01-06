@@ -60,6 +60,12 @@ class EligibilityService {
     return result;
   }
 
+  /**
+   * Step comparison of cart property and criteria value
+   * @param {string | number} cartProperty 
+   * @param {string | number | object} criteriaValue 
+   * @returns {boolean} if cart property satisfies criteria
+   */
   _checkCondition(cartProperty, criteriaValue) {
     // 1- Basic condition (eg: total: 20) matches when total == 20;
     if(
@@ -127,6 +133,13 @@ class EligibilityService {
     return tempChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true)
   }
 
+  /**
+   * Checks for the validity of the inequalities gt, gte, lt and lte
+   * @param {string} type 
+   * @param {string | number} valueChecked 
+   * @param {number} limit 
+   * @returns {boolean} inequality validity
+   */
   _validateInequality(type, valueChecked, limit) {
     switch(type) {
       case "gt": return valueChecked > limit;
