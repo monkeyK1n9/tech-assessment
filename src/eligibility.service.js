@@ -27,7 +27,7 @@ class EligibilityService {
             continue;
           }
 
-          isConditionValid.push(this.checkCondition(cart[criteriaKey[0]][criteriaKey[1]], Object.entries(criteria)[i][1]))
+          isConditionValid.push(this._checkCondition(cart[criteriaKey[0]][criteriaKey[1]], Object.entries(criteria)[i][1]))
           console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
         }
         else {
@@ -38,7 +38,7 @@ class EligibilityService {
               arrChecks.push(false);
               continue
             }
-            arrChecks.push(this.checkCondition(cart[criteriaKey[0]][j][criteriaKey[1]], Object.entries(criteria)[i][1]))
+            arrChecks.push(this._checkCondition(cart[criteriaKey[0]][j][criteriaKey[1]], Object.entries(criteria)[i][1]))
           }
 
           // Now we reduce the arrChecks to validate check
@@ -51,7 +51,7 @@ class EligibilityService {
           isConditionValid.push(false);
           continue;
         }
-        isConditionValid.push(this.checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
+        isConditionValid.push(this._checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
         console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
       }
     }
@@ -60,7 +60,7 @@ class EligibilityService {
     return result;
   }
 
-  checkCondition(cartProperty, criteriaValue) {
+  _checkCondition(cartProperty, criteriaValue) {
     // 1- Basic condition (eg: total: 20) matches when total == 20;
     if(
       typeof criteriaValue !== "object" && 
@@ -89,7 +89,7 @@ class EligibilityService {
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < andCheckArr.length; j++) {
           if(andCheckArr[i][0] !== 'in') {
-            andChecks.push(this.validateInequality(andCheckArr[j][0], cartProperty, andCheckArr[j][1]));
+            andChecks.push(this._validateInequality(andCheckArr[j][0], cartProperty, andCheckArr[j][1]));
           }
           else if(andCheckArr[j][0] == 'in') {
             andChecks.push(andCheckArr[j][1].includes(cartProperty));
@@ -106,7 +106,7 @@ class EligibilityService {
         // now validate the gt, gte, lt, lte conditions
         for(let j = 0; j < orCheckArr.length; j++) {
           if(orCheckArr[j][0] !== 'in') {
-            orChecks.push(this.validateInequality(orCheckArr[j][0], cartProperty, orCheckArr[j][1]));
+            orChecks.push(this._validateInequality(orCheckArr[j][0], cartProperty, orCheckArr[j][1]));
           }
           else if(orCheckArr[j][0] == 'in') {
             orChecks.push(orCheckArr[j][1].includes(cartProperty));
@@ -119,7 +119,7 @@ class EligibilityService {
 
       // 3- gt, gte, lt, lte checks
       else {
-        tempChecks.push(this.validateInequality(criteriaArr[i][0], cartProperty, criteriaArr[i][1]))
+        tempChecks.push(this._validateInequality(criteriaArr[i][0], cartProperty, criteriaArr[i][1]))
       }
     }
 
@@ -127,7 +127,7 @@ class EligibilityService {
     return tempChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true)
   }
 
-  validateInequality(type, valueChecked, limit) {
+  _validateInequality(type, valueChecked, limit) {
     switch(type) {
       case "gt": return valueChecked > limit;
       case "gte": return valueChecked >= limit;
