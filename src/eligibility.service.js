@@ -19,14 +19,29 @@ class EligibilityService {
       };
       // if obj key contains ".", we do the check down the chain
       if(Object.entries(criteria)[i][0].includes(".")) {
-        const unflattenObject = this.unflattenObject(obj);
+        const criteriaKey = Object.entries(criteria)[i][0].split(".");
+        if(!Array.isArray(cart[criteriaKey[0]])) {
+          isConditionValid.push(this.checkCondition(cart[criteriaKey[0]][criteriaKey[1]], Object.entries(criteria)[i][1]))
+          console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
+          console.log("Checks: " + isConditionValid);
+        }
+        else {
+          // we loop over the array to perform the checks
+          let arrChecks = [];
+          for(let j = 0; j < cart[criteriaKey[0]].length; j++) {
+            arrChecks.push(this.checkCondition(cart[criteriaKey[0]][j][criteriaKey[1]], Object.entries(criteria)[i][1]))
+          }
 
-        continue;
+          // Now we reduce the arrChecks to validate check
+          isConditionValid.push(arrChecks.reduce((accumulator, currentValue) => accumulator && currentValue, true));
+          console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
+          console.log("Checks: " + isConditionValid);
+        }
       } 
       else {
         isConditionValid.push(this.checkCondition(cart[Object.entries(criteria)[i][0]], Object.entries(criteria)[i][1]))
         console.log(Object.entries(criteria)[i][0], Object.entries(criteria)[i][1])
-        console.log("Check without . : " + isConditionValid);
+        console.log("Checks: " + isConditionValid);
       }
     }
     const result = isConditionValid.reduce((accumulator, currentValue) => accumulator && currentValue, true);
@@ -134,16 +149,16 @@ class EligibilityService {
 
       // 3- gt, gte, lt, lte checks
       else if(criteriaArr[i][0] == 'gt') {
-        tempChecks.push(this.validateInequality("gt", cartProperty, orCheckArr[i][1]))
+        tempChecks.push(this.validateInequality("gt", cartProperty, criteriaArr[i][1]))
       }
       else if(criteriaArr[i][0] == 'gte') {
-        tempChecks.push(this.validateInequality("gte", cartProperty, orCheckArr[i][1]))
+        tempChecks.push(this.validateInequality("gte", cartProperty, criteriaArr[i][1]))
       }
       else if(criteriaArr[i][0] == 'lt') {
-        tempChecks.push(this.validateInequality("lt", cartProperty, orCheckArr[i][1]))
+        tempChecks.push(this.validateInequality("lt", cartProperty, criteriaArr[i][1]))
       }
       else if(criteriaArr[i][0] == 'lte') {
-        tempChecks.push(this.validateInequality("lte", cartProperty, orCheckArr[i][1]))
+        tempChecks.push(this.validateInequality("lte", cartProperty, criteriaArr[i][1]))
       }
     }
 
